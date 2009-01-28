@@ -3796,20 +3796,28 @@ int FluxboxWindow::getOnHead() const {
 }
 
 void FluxboxWindow::setOnHead(int head) {
-    if (head > 0 && head <= screen().numHeads()) {
-        int cur = screen().getHead(fbWindow());
-        bool placed = m_placed;
-        move(screen().getHeadX(head) + frame().x() - screen().getHeadX(cur),
-             screen().getHeadY(head) + frame().y() - screen().getHeadY(cur));
-        m_placed = placed;
-    }
+  if (head > 0 && head <= screen().numHeads()) {
+    int cur = screen().getHead(fbWindow());
+    bool placed = m_placed;
 
-    // if Head has been changed we want it to redraw by current state
-    if (m_state.maximized || m_state.fullscreen) {
-        frame().applyState();
-        attachWorkAreaSig();
-        stateSig().notify();
-    }
+    //If screen cur and screen head have the same resolution, just move the frame
+    //else 	resize width/height relativ to the resolution of the new screen
+    // 	set the position relativ to the resolution of the new screen
+    if( screen().getHeadWidth(head) == screen().getHeadWidth(cur) 
+        && screen().getHeadHeight(head) == screen().getHeadHeight(cur)) 
+    {
+      move( 	screen().getHeadX(head) + frame().x() - screen().getHeadX(cur),
+          screen().getHeadY(head) + frame().y() - screen().getHeadY(cur));
+    } else {
+
+      moveResize(	screen().getHeadWidth(head) * (frame().x() - screen().getHeadX(cur)) / screen().getHeadWidth(cur) + screen().getHeadX(head),
+          screen().getHeadHeight(head) * (frame().y() - screen().getHeadY(cur)) / screen().getHeadHeight(cur) + screen().getHeadY(head),
+          (frame().width() * screen().getHeadWidth(head)) / screen().getHeadWidth(cur),
+          (frame().height() * screen().getHeadHeight(head)) / screen().getHeadHeight(cur));
+    } 
+
+    m_placed = placed;
+  }
 }
 
 void FluxboxWindow::placeWindow(int head) {
